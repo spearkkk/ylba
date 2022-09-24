@@ -2,6 +2,8 @@ package com.spearkkk.ylba.controller.guest;
 
 import com.spearkkk.ylba.domain.user.ServiceUser;
 import com.spearkkk.ylba.domain.user.ServiceUserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.validation.Valid;
 import java.util.*;
 
+@Tag(name = "Guest API")
 @Slf4j
 @RequiredArgsConstructor
 @RestController
@@ -26,6 +29,7 @@ public class GuestController {
 
     private final ServiceUserRepository serviceUserRepository;
 
+    @Operation(summary = "회원가입", description = "사용자의 정보를 등록한다.")
     @PostMapping(value = "/sign-up")
     public void signUp(@Valid  @RequestBody SignUpDto signUpDto) {
         if (!VERIFIED_PHONE.contains(signUpDto.getPhone())) {
@@ -54,6 +58,7 @@ public class GuestController {
         }
     }
 
+    @Operation(summary = "전화번호 인증 코드 확인", description = "사용자의 전화번호로 발송한 코드를 확인한다.")
     @PostMapping(value = "/verify/code")
     public void verifyCode(@Valid @RequestBody VerificationCodeVerifyDto verificationCodeVerifyDto) {
         String phone = verificationCodeVerifyDto.getPhone();
@@ -68,6 +73,7 @@ public class GuestController {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification failed.");
     }
 
+    @Operation(summary = "전화번호 인증 코드 보내기", description = "사용자의 전화번호로 인증 코드를 발송한다.")
     @PostMapping(value = "/request/code")
     public VerificationCodeResponse requetCode(@Valid @RequestBody VerificationCodeRequestDto verificationCodeRequestDto) {
         int code = Math.abs(new Random(System.currentTimeMillis()).nextInt()) % 1_000_000;
@@ -78,9 +84,11 @@ public class GuestController {
         return VerificationCodeResponse.builder().phone(verificationCodeRequestDto.getPhone()).code(code).build();
     }
 
+    @Operation(summary = "비밀번호 재설정", description = "사용자의 비밀번호를 재설정한다.")
     @Transactional
     @PostMapping(value = "/change-password")
     public void changePassword(@Valid @RequestBody PasswordChangeRequestDto passwordChangeRequestDto) {
+        // todo: 단순히 전화번호 인증만 확인하고 있는데, 요청 자체를 확인할 수 있는 방안을 마련해야 함.
         if (!VERIFIED_PHONE.contains(passwordChangeRequestDto.getPhone())) {
             log.warn("Phone is not verified yet. `passwordChangeRequestDto`: {}", passwordChangeRequestDto);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please verify your phone number first.");
